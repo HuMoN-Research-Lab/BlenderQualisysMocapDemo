@@ -2,19 +2,22 @@
 
 Welcome to the demo of importing tsv Qualisys Motion Capture data into Blender and creating a full body animation with it! 👾
 
+Here's a general overview of the steps that are taken to produce the animation:
 ## Steps Overview:
-### 1. Import tsv file containing the Qualisys (x, y, z) data for each marker on each frame into Blender.
-### 2. Create a function that will take the list of all data in "file" and return just the (x, y, z) data for each marker on one frame (frame # is given as a parameter to the function)
-### 3. Create an array of marker names 
-### 4. Add an empty object at each marker location for one frame
-### 5. Create an armature object
-### 6. Add bones to your armature object
-### 7. Create a parent relationship between the head of a bone and an empty, and the tail of the same bone with a different empty
-### 8. Add bones to your armature object
-### 9. Create bone geometry (mesh)
-### 10. Create a handler function that will run on each frame
-### 11. Write a function that iterates through all frames and renders a png of each one 
+1. Import tsv file containing the Qualisys (x, y, z) data for each marker on each frame into Blender.
+2. Create a function that will take the list of all data in "file" and return just the (x, y, z) data for each marker on one frame (frame # is given as a parameter to the function)
+3. Create an array of marker names 
+4. Add an empty object at each marker location for one frame
+5. Create an armature object
+6. Add bones to your armature object
+7. Create a parent relationship between the head of a bone and an empty, and the tail of the same bone with a different empty
+8. Add bones to your armature object
+9. Create bone geometry (mesh)
+10. Create a handler function that will run on each frame
+11. Write a function that iterates through all frames and renders a png of each one 
 
+
+Okay, let's get started!
 
 ## Steps Detailed:
 
