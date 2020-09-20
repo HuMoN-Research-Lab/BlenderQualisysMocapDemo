@@ -82,6 +82,49 @@ So, we create a list of the marker names in order so that we can name each of ou
         name_arr.append(current_row[index])
    ```
 
+### 4. Add an empty object at each marker location for one frame
+At the top of the code, import bpy which we will need to create a Blender object
+   ```python
+   #At the top of the code
+   import bpy
+   ```
+Then we can iterate through our list opf markers and create an empty object at each marker position on the first frame.
+
+   ```python
+    #Create empties at marker positions
+    #position in the name array
+    name = 0
+    #an array to hold all marker objects
+    order_of_markers = []
+    #iterate through arr and create an empty object at that location for each element
+    for col in arr:
+    # parse string float value into floats, create Vector, set empty position to Vector
+    # multiply by .001 to scale down data
+    coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+    #Add an empty object to the scene
+    bpy.ops.object.add(type='EMPTY', location=coord)  
+    #assign the empty to variable 
+    mt = bpy.context.active_object  
+    #get name from name array "name_arr"
+    mt.name = name_arr[name]
+    #increment name iter of empty names array 
+    name += 1
+    #link empty to this scene
+    bpy.context.scene.collection.objects.link( mt )
+    #set empty location
+    mt.location = coord
+    #set empty display size
+    mt.empty_display_size = 0.1
+    #add empty to array order_of_markers so we can later access it 
+    order_of_markers.append(mt)
+   ```
+
+<p align="center">
+ <img src="https://user-images.githubusercontent.com/44556715/93720789-41092180-fb59-11ea-8d46-7e0d07fa12c0.png">
+</p>
+
+### 5. Create an armature object
+
 
 ... Now you have your animation! 🎦
 
