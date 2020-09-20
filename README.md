@@ -11,10 +11,9 @@ Here's a general overview of the steps that are taken to produce the animation:
 5. Create an armature object
 6. Add bones to your armature object
 7. Create a parent relationship between the head of a bone and an empty, and the tail of the same bone with a different empty
-8. Add bones to your armature object
-9. Create bone geometry (mesh)
-10. Create a handler function that will run on each frame
-11. Write a function that iterates through all frames and renders a png of each one 
+8. Create bone geometry (mesh)
+9. Create a handler function that will run on each frame
+10. Write a function that iterates through all frames and renders a png of each one 
 
 
 Okay, let's get started!
@@ -26,6 +25,9 @@ Okay, let's get started!
   ```python
   #At top of code
   import csv
+  
+  #file path of the tsv data
+  input_tsv = r"SteveWalking0004.tsv"
   
   #open file and read marker animation data, convert data into a huge list
   with open(input_tsv, "r") as tsv_file:
@@ -88,7 +90,7 @@ At the top of the code, import bpy which we will need to create a Blender object
    #At the top of the code
    import bpy
    ```
-Then we can iterate through our list opf markers and create an empty object at each marker position on the first frame.
+Then we can iterate through our list of markers and create an empty object at each marker position on the first frame.
 
    ```python
     #Create empties at marker positions
@@ -124,7 +126,19 @@ Then we can iterate through our list opf markers and create an empty object at e
 </p>
 
 ### 5. Create an armature object
-
+  ```python
+    #Create armature object
+    armature = bpy.data.armatures.new('Armature')
+    armature_object = bpy.data.objects.new('Armature', armature)
+    #Link armature object to our scene
+    bpy.context.collection.objects.link(armature_object)
+    #Make armature variable
+    armature_data = bpy.data.objects[armature_object.name]
+    #Set armature active
+    bpy.context.view_layer.objects.active = armature_data
+    #Set armature selected
+    armature_data.select_set(state=True)
+   ```
 
 ... Now you have your animation! 🎦
 
