@@ -588,7 +588,29 @@ bpy.context.object.show_in_front = False
 
 ### 9. Create skeleton geometry (mesh)
 
+This part is all aesthetic! If you're just looking to plot the data and look at it for correctness, there's no need to create a mesh. But, if you want to render out some pretty frames and make an animated video, here's some code to help create a mesh that defines the skeleton and markers:
+
   ```python
+  
+#add visible sphere meshes on each marker
+for empty in order_of_markers:
+    bpy.ops.mesh.primitive_uv_sphere_add(enter_editmode=False, location=(0, 0, 0))
+    sphere = bpy.context.selected_objects[0]
+    sphere.parent = empty
+    sphere.matrix_world.translation = empty.matrix_world.translation
+    #size of sphere
+    sphere.scale[0] = 0.015
+    sphere.scale[1] = 0.015
+    sphere.scale[2] = 0.015
+    mat = bpy.data.materials.get("Material-marker")
+    if sphere.data.materials:
+        # assign to 1st material slot
+        sphere.data.materials[0] = mat
+    else:
+        # no slots
+        sphere.data.materials.append(mat)
+        
+        
 #Create mesh outline of skeleton parts
  # verts made with XYZ coords
 verts = []
@@ -685,6 +707,27 @@ outline_mesh_obob = obj
 </p>
 
   ```python
+#add visible sphere meshes on each marker
+
+for empty in order_of_markers:
+    bpy.ops.mesh.primitive_uv_sphere_add(enter_editmode=False, location=(0, 0, 0))
+    sphere = bpy.context.selected_objects[0]
+    sphere.parent = empty
+    sphere.matrix_world.translation = empty.matrix_world.translation
+    #size of sphere
+    sphere.scale[0] = 0.015
+    sphere.scale[1] = 0.015
+    sphere.scale[2] = 0.015
+    mat = bpy.data.materials.get("Material-marker")
+    if sphere.data.materials:
+        # assign to 1st material slot
+        sphere.data.materials[0] = mat
+    else:
+        # no slots
+        sphere.data.materials.append(mat)
+        
+
+   
 #script to create a mesh of the armature 
 def CreateMesh():
     obj = get_armature()
@@ -802,6 +845,11 @@ def processArmature(context, arm, genVertexGroups = True):
 
     return meshObj
 
+#Set armature active
+bpy.context.view_layer.objects.active = armature_data
+#Set armature selected
+armature_data.select_set(state=True)
+#must have armature selected before creating mesh
 mesh_obob = CreateMesh()
 
   ```
@@ -809,6 +857,8 @@ mesh_obob = CreateMesh()
 ### 10. Create and register a handler function that will run on each frame
 
   ```python
+# Animate!
+current_skel_frame = [0]
 #handler function runs on every frame of the animation                
 def my_handler(scene): 
     bpy.ops.object.mode_set(mode='POSE')
@@ -850,12 +900,20 @@ def unregister():
 register()
   ```
   
- 
+To watch your animation in the Blender viewport, in OBJECT or POSE mode, click the space bar or go to the Animation tab on the top and click play! In the animation interface you can also scrub through the animation and jump to specific frames. 
 
 ### 11. Write a function that iterates through all frames and renders a png of each one 
 
   ```python
-#script to export animation as pngs and add info to XML file
+#find number of frames in file
+num_frames = len(file) - header_end
+
+bpy.context.scene.frame_start = frame_start
+bpy.context.scene.frame_end = num_frames
+#Set FPS: fps of qualisys motion caption data is 300.
+bpy.context.scene.render.fps = 300
+
+#script to export animation as pngs 
 print("Saving frames...")
 scene = bpy.context.scene
 #set the number of frames to output 
@@ -863,7 +921,12 @@ if frame_end is "all":
     frame_end = scene.frame_end + 1
 else: 
     frame_end += 1
-#iterate through all frames
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+#Set armature active
+bpy.context.view_layer.objects.active = armature_data
+#Set armature selected
+armature_data.select_set(state=True)
+#iterate through frames
 for frame in range(frame_start, frame_end):
     print(frame)
     #specify file path to the folder you want to export to
