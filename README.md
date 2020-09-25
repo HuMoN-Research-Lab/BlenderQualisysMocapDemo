@@ -3,6 +3,11 @@
 Welcome to the demo of importing tsv Qualisys Motion Capture data into Blender and creating a full body animation with it! 👾
 
 Here's a general overview of the steps that are taken to produce the animation:
+
+<p align="center">
+ <img src="https://user-images.githubusercontent.com/44556715/94271759-11b73380-ff10-11ea-86c7-f48be0015aba.gif">
+</p>
+
 ## Steps Overview:
 1. Import tsv file containing the Qualisys (x, y, z) data for each marker on each frame into Blender.
 2. Create a function that will take the list of all data in "file" and return just the (x, y, z) data for each marker on one frame (frame # is given as a parameter to the function)
@@ -41,15 +46,15 @@ If you want some fancy lighting, you can download my starter file from this repo
   While we're here, let's do some set-up for later rendering steps. 
   
   ```python
-    #Start frame of data (inclusive)
-    frame_start = 1
+  #Start frame of data (inclusive)
+  frame_start = 1
 
-    #End frame of data (inclusive)
-    #set to "all" if you wish to render until the last frame
-    frame_end = 2
+  #End frame of data (inclusive)
+  #set to "all" if you wish to render until the last frame
+  frame_end = 2
 
-    #folder to output the rendered frames to 
-    output_frames_folder = #[whatever directory you choose here]
+  #folder to output the rendered frames to 
+  output_frames_folder = #[whatever directory you choose here]
 
   ```
   
@@ -62,29 +67,29 @@ This function parses the data into an array of arrays, where the outer array hol
 We have to find the row and column of where the data actually starts in the tsv. We know that in the Qualisys data, the header ends at row 11, and the left_header ends at column 2. 
 
 ```python
-  header_end = 11
-  left_header_end = 2
+header_end = 11
+left_header_end = 2
 
-  # Create 2D array "arr" to hold all 3D coordinate info of markers
-  #return an array containing all marker locations at given frame
-  def create_data_arr(frame):
-      current_row = file[frame + header_end]
-      cols, rows = (3, int((len(current_row) - 2) / 3))
-      #Create an array of the correct size with nothing in it at first
-      arr = [[None]*cols for _ in range(rows)]
-      #count represents the index 0, 1, or 2 in this marker's x, y, z data
-      count = 0
-      #count_row represents the number marker in the row of data for this frame
-      count_row = 0
-      for x in range(left_header_end, len(current_row)):
-          #assign data
-          arr[count_row][count] = current_row[x]
-          count += 1
-          #when we reach the z position, move on to the next marker 
-          if (count == 3):
-              count = 0
-              count_row += 1
-      return arr; 
+# Create 2D array "arr" to hold all 3D coordinate info of markers
+#return an array containing all marker locations at given frame
+def create_data_arr(frame):
+    current_row = file[frame + header_end]
+    cols, rows = (3, int((len(current_row) - 2) / 3))
+    #Create an array of the correct size with nothing in it at first
+    arr = [[None]*cols for _ in range(rows)]
+    #count represents the index 0, 1, or 2 in this marker's x, y, z data
+    count = 0
+    #count_row represents the number marker in the row of data for this frame
+    count_row = 0
+    for x in range(left_header_end, len(current_row)):
+        #assign data
+        arr[count_row][count] = current_row[x]
+        count += 1
+        #when we reach the z position, move on to the next marker 
+        if (count == 3):
+            count = 0
+            count_row += 1
+    return arr; 
 ``` 
       
 Then, we can extract the data from just the first frame as an array
@@ -102,15 +107,15 @@ with open(input_tsv, "r") as tsv_file:
 For this kind of Qualisys data, we know that the marker names are contained in the 9th row of the data.
 
 So, we create a list of the marker names in order so that we can name each of our marker objects late on. 
-   ```python
-    marker_names_row = 9
-    
-    #Create an array of marker names 
-    current_row = file[marker_names_row] 
-    name_arr = []
-    for index in range(1, len(current_row)):
-        name_arr.append(current_row[index])
-   ```
+  ```python
+  marker_names_row = 9
+
+  #Create an array of marker names 
+  current_row = file[marker_names_row] 
+  name_arr = []
+  for index in range(1, len(current_row)):
+      name_arr.append(current_row[index])
+  ```
 
 ### 4. Add an empty object at each marker location for one frame
 At the top of the code, import bpy which we will need to create a Blender object. The bpy module allows us to use Python to call Blender's API and gives us access to Blender's data, classes, functions, etc
@@ -122,32 +127,32 @@ At the top of the code, import bpy which we will need to create a Blender object
 Then we can iterate through our list of markers and create an empty object at each marker position on the first frame.
 
    ```python
-    #Create empties at marker positions
-    #position in the name array
-    name = 0
-    #an array to hold all marker objects
-    order_of_markers = []
-    #iterate through arr and create an empty object at that location for each element
-    for col in arr:
-    # parse string float value into floats, create Vector, set empty position to Vector
-    # multiply by .001 to scale down data
-    coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
-    #Add an empty object to the scene
-    bpy.ops.object.add(type='EMPTY', location=coord)  
-    #assign the empty to variable 
-    mt = bpy.context.active_object  
-    #get name from name array "name_arr"
-    mt.name = name_arr[name]
-    #increment name iter of empty names array 
-    name += 1
-    #link empty to this scene
-    bpy.context.scene.collection.objects.link( mt )
-    #set empty location
-    mt.location = coord
-    #set empty display size
-    mt.empty_display_size = 0.1
-    #add empty to array order_of_markers so we can later access it 
-    order_of_markers.append(mt)
+   #Create empties at marker positions
+   #position in the name array
+   name = 0
+   #an array to hold all marker objects
+   order_of_markers = []
+   #iterate through arr and create an empty object at that location for each element
+   for col in arr:
+     # parse string float value into floats, create Vector, set empty position to Vector
+     # multiply by .001 to scale down data
+     coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+     #Add an empty object to the scene
+     bpy.ops.object.add(type='EMPTY', location=coord)  
+     #assign the empty to variable 
+     mt = bpy.context.active_object  
+     #get name from name array "name_arr"
+     mt.name = name_arr[name]
+     #increment name iter of empty names array 
+     name += 1
+     #link empty to this scene
+     bpy.context.scene.collection.objects.link( mt )
+     #set empty location
+     mt.location = coord
+     #set empty display size
+     mt.empty_display_size = 0.1
+     #add empty to array order_of_markers so we can later access it 
+     order_of_markers.append(mt)
    ```
 
 <p align="center">
@@ -159,18 +164,18 @@ Then we can iterate through our list of markers and create an empty object at ea
 An armature in Blender can be thought of as a skeleton, which can have many bones. We will use this to represent the underlying body performing the action represented by the motion capture data, and eventually we will use this armature to deform a mesh.
 
   ```python
-    #Create armature object
-    armature = bpy.data.armatures.new('Armature')
-    armature_object = bpy.data.objects.new('Armature', armature)
-    #Link armature object to our scene
-    bpy.context.collection.objects.link(armature_object)
-    #Make armature variable
-    armature_data = bpy.data.objects[armature_object.name]
-    #Set armature active
-    bpy.context.view_layer.objects.active = armature_data
-    #Set armature selected
-    armature_data.select_set(state=True)
-   ```
+  #Create armature object
+  armature = bpy.data.armatures.new('Armature')
+  armature_object = bpy.data.objects.new('Armature', armature)
+  #Link armature object to our scene
+  bpy.context.collection.objects.link(armature_object)
+  #Make armature variable
+  armature_data = bpy.data.objects[armature_object.name]
+  #Set armature active
+  bpy.context.view_layer.objects.active = armature_data
+  #Set armature selected
+  armature_data.select_set(state=True)
+  ```
 
 ### 6. Make virtual markers
 
@@ -411,7 +416,7 @@ def update_virtual_marker(index):
 
 Create a function that will add a bone to your new armature! We want the bone to connect two markers, since the virtual markers are located at so we set one end of the bone (bone head) location to be "empty1" and the other end of the bone (bone tail) location to be "empty2"
   
-  ```python
+```python
 #adds child bone given corresponding parent and empty
 #bone tail will appear at the location of empty
 def add_child_bone(bone_name, empty1, empty2):
@@ -447,7 +452,7 @@ def get_armature():
             break
     return armature
 armature = get_armature()
-  ```  
+```  
   
 Now, based on how you want to arrange the bones, create a list of tuples that save the information of the bone name, and the two markers that it will connect.
 
@@ -491,7 +496,7 @@ def tuple_to_armature(bones):
 #create all bones for skeleton body and hands
 tuple_to_armature(list_of_bones_order)
 
-  ```  
+```  
   
 <p align="center">
  <img src="https://user-images.githubusercontent.com/44556715/94216262-f23aef00-feac-11ea-8065-919e2baf80da.png">
@@ -501,7 +506,7 @@ tuple_to_armature(list_of_bones_order)
 
 The "child" object will follow the "parent object. So, we want the bone heads and tails to follow their corresponding marker! We can create functions to automate this process for each bone/marker set.
 
-  ```python
+```python
 #parent heads and tails to empties
 #use bone constraints 
 def parent_to_empties(bone_name, head, tail):
@@ -540,7 +545,7 @@ bpy.context.object.data.display_type = 'STICK'
 #don't show armature in front of mesh
 bpy.context.object.show_in_front = False
 
-  ```
+```
 
 ### 9. Create skeleton geometry (mesh)
 
@@ -760,7 +765,7 @@ To watch your animation in the Blender viewport, in OBJECT or POSE mode, click t
 
 To export your frames as a png sequence, we'll need to write a script to render them! At the top of the code, we defined our "frame_start" and "frame_end" of the sequence of frames we want to render. 
 
-We can also specify the fps if we want to watch it in the viewport (although in Blender, at least on my computer, the viewport can't play very high fps, but we can watch it faster by scrubbing through it in the Animation tab. 
+We can also specify the fps if we want to watch it in the viewport (although in Blender, at least on my computer, the viewport can't play very high fps, but we can watch it faster by scrubbing through it in the Animation tab.)
 
 Also note that if you use a different Blender project than the demo file given, you'll need a camera pointed at the skeleton in your project before you can render out frames.  
 
