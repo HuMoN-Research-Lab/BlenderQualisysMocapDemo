@@ -5,7 +5,7 @@ Welcome to the demo of importing tsv Qualisys Motion Capture data into Blender a
 Here's a general overview of the steps that are taken to produce the animation:
 
 <p align="center">
- <img src="https://user-images.githubusercontent.com/44556715/94271759-11b73380-ff10-11ea-86c7-f48be0015aba.gif">
+ <img src="https://user-images.githubusercontent.com/44556715/94280269-32d15180-ff1b-11ea-9354-829861e9780c.gif">
 </p>
 
 ## Steps Overview:
@@ -779,8 +779,8 @@ bpy.context.scene.frame_end = num_frames
 bpy.context.scene.render.fps = 300
 
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-obj.select_set(True)
-bpy.context.view_layer.objects.active = obj
+armature.select_set(True)
+bpy.context.view_layer.objects.active = armature
 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 #Set armature active
 bpy.context.view_layer.objects.active = armature_data
