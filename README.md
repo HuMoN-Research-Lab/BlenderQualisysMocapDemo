@@ -40,7 +40,7 @@ If you want some fancy lighting, you can download my starter file from this repo
   
   While we're here, let's do some set-up for later rendering steps. 
   
-    ```python
+  ```python
     #Start frame of data (inclusive)
     frame_start = 1
 
@@ -51,7 +51,7 @@ If you want some fancy lighting, you can download my starter file from this repo
     #folder to output the rendered frames to 
     output_frames_folder = #[whatever directory you choose here]
 
-    ```
+  ```
   
 ### 2. Create a function that will take the list of all data in "file" and return just the (x, y, z) data for each marker on one frame (frame # is given as a parameter to the function)
 
