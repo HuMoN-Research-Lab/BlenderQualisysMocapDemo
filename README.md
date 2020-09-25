@@ -173,6 +173,10 @@ An armature in Blender can be thought of as a skeleton, which can have many bone
    ```
 
 ### 6. Make virtual markers
+
+Since the Qualisys data does not record the joint centers, but rather the centers of rigid bodies on our skeletons, we need to find a way to convert this data into being joint centers for when we build the skeleton. 
+
+One solution to this is creating virtual markers:
  
   ```python
  #--------------------------------------------------------------
@@ -405,7 +409,7 @@ def update_virtual_marker(index):
     
 ### 7. Add bones to your armature object
 
-Create a function that will add a bone to your new armature! We want the bone to connect two markers, since the markers are located at joints so we set one end of the bone (bone head) location to be "empty1" and the other end of the bone (bone tail) location to be "empty2"
+Create a function that will add a bone to your new armature! We want the bone to connect two markers, since the virtual markers are located at so we set one end of the bone (bone head) location to be "empty1" and the other end of the bone (bone tail) location to be "empty2"
   
   ```python
 #adds child bone given corresponding parent and empty
@@ -576,7 +580,7 @@ for empty in order_of_markers:
 
    
 #The CreateMesh script was adapted from this stack exchange post: 
-https://blender.stackexchange.com/questions/75040/convert-bones-to-meshes/75049
+#https://blender.stackexchange.com/questions/75040/convert-bones-to-meshes/75049
 def CreateMesh():
     obj = get_armature()
 
