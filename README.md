@@ -23,6 +23,8 @@ Okay, let's get started!
 
 ### 1. Import tsv file containing the Qualisys (x, y, z) data for each marker on each frame into Blender.
 
+If you want some fancy lighting, you can download my starter file from this repository, otherwise feel free to make a plain new Blender project or a customized one! Any Blender project will work with this script. 
+
   ```python
   #At top of code
   import csv
@@ -35,6 +37,21 @@ Okay, let's get started!
    file = list(csv.reader(tsv_file, delimiter='\t'))
   ```
   Now the variable "file" holds a list that contains 
+  
+  While we're here, let's do some set-up for later rendering steps. 
+  
+    ```python
+    #Start frame of data (inclusive)
+    frame_start = 1
+
+    #End frame of data (inclusive)
+    #set to "all" if you wish to render until the last frame
+    frame_end = 2
+
+    #folder to output the rendered frames to 
+    output_frames_folder = #[whatever directory you choose here]
+
+  ```
   
 ### 2. Create a function that will take the list of all data in "file" and return just the (x, y, z) data for each marker on one frame (frame # is given as a parameter to the function)
 
@@ -53,12 +70,17 @@ We have to find the row and column of where the data actually starts in the tsv.
   def create_data_arr(frame):
       current_row = file[frame + header_end]
       cols, rows = (3, int((len(current_row) - 2) / 3))
+      #Create an array of the correct size with nothing in it at first
       arr = [[None]*cols for _ in range(rows)]
+      #count represents the index 0, 1, or 2 in this marker's x, y, z data
       count = 0
+      #count_row represents the number marker in the row of data for this frame
       count_row = 0
       for x in range(left_header_end, len(current_row)):
+          #assign data
           arr[count_row][count] = current_row[x]
           count += 1
+          #when we reach the z position, move on to the next marker 
           if (count == 3):
               count = 0
               count_row += 1
@@ -67,7 +89,12 @@ We have to find the row and column of where the data actually starts in the tsv.
       
 Then, we can extract the data from just the first frame as an array
 ```python
-   arr = create_data_arr(frame)
+#open file and read marker animation data
+with open(input_tsv, "r") as tsv_file:
+    file = list(csv.reader(tsv_file, delimiter='\t'))
+    #the data from the starting frame
+    frame = frame_start
+    arr = create_data_arr(frame)
 ``` 
    
 ### 3. Create an array of marker names 🧩
@@ -144,91 +171,6 @@ An armature in Blender can be thought of as a skeleton, which can have many bone
     #Set armature selected
     armature_data.select_set(state=True)
    ```
-### 6. Add bones to your armature object 🦴
-
-Create a function that will add a bone to your new armature! We want the bone to connect two markers, since the markers are located at joints so we set one end of the bone (bone head) location to be "empty1" and the other end of the bone (bone tail) location to be "empty2"
-  ```python
-#adds child bone given corresponding parent and empty
-#bone tail will appear at the location of empty
-def add_child_bone(bone_name, empty1, empty2):
-    #Create a new bone
-    new_bone = armature_data.data.edit_bones.new(bone_name)
-    #Set bone's size
-    new_bone.head = (0,0,0)
-    new_bone.tail = (0,0.5,0)
-    #Set bone's location to wheel
-    new_bone.matrix = empty2.matrix_world
-    #set location of bone head
-    new_bone.head =  empty1.location
-    #set location of bone tail
-    new_bone.tail = empty2.location
-    return new_bone
-  ```
- 
-Now, based on how you want to arrange the bones, create a list of tuples that save the information of the bone name, and the two markers that it will connect. 
-For example: 
-  ```python
-list_of_bones_order = [('bone0', order_of_markers[1], order_of_markers[3]),
-        ('bone1', order_of_markers[3], order_of_markers[0]),
-        ('bone2', order_of_markers[3], order_of_markers[2]),
-        ('bone3', order_of_markers[19], order_of_markers[18]),
-        ('bone4', order_of_markers[18], order_of_markers[4]),
-        ('bone5', order_of_markers[4], order_of_markers[7]),
-        ('bone6', order_of_markers[7], order_of_markers[8]),
-        ('bone7', order_of_markers[18], order_of_markers[11]),
-        ('bone8', order_of_markers[11], order_of_markers[14]),
-        ('bone9', order_of_markers[14], order_of_markers[15]),
-        ('bone10', order_of_markers[22], order_of_markers[26]),
-        ('bone11', order_of_markers[26], order_of_markers[27]),
-        ('bone12', order_of_markers[27], order_of_markers[28]),
-        ('bone13', order_of_markers[28], order_of_markers[29]),
-        ('bone14', order_of_markers[29], order_of_markers[31]),
-        ('bone15', order_of_markers[29], order_of_markers[32]),
-        ('bone16', order_of_markers[29], order_of_markers[33]),
-        ('bone17', order_of_markers[25], order_of_markers[34]),
-        ('bone18', order_of_markers[34], order_of_markers[35]),
-        ('bone19', order_of_markers[35], order_of_markers[36]),
-        ('bone20', order_of_markers[36], order_of_markers[37]),
-        ('bone21', order_of_markers[37], order_of_markers[41]),
-        ('bone22', order_of_markers[37], order_of_markers[39]), 
-        ('bone23', order_of_markers[12], order_of_markers[13]),
-        ('bone24', order_of_markers[13], order_of_markers[14]),
-        ('bone25', order_of_markers[15], order_of_markers[17]),
-        #('bone26', order_of_markers[37], order_of_markers[40]),
-        ('bone27', order_of_markers[19], order_of_markers[5]),
-        ('bone28', order_of_markers[5], order_of_markers[6]),
-        ('bone29', order_of_markers[6], order_of_markers[7]),
-        ('bone30', order_of_markers[8], order_of_markers[9]),
-        ('bone31', order_of_markers[19], order_of_markers[18]),
-        ('bone32', order_of_markers[18], order_of_markers[20]),
-        ('bone33', order_of_markers[18], order_of_markers[21]),
-        ('bone34', order_of_markers[20], order_of_markers[23]),
-        ('bone35', order_of_markers[21], order_of_markers[24]),
-        ('bone36', order_of_markers[23], order_of_markers[22]),
-        ('bone37', order_of_markers[24], order_of_markers[25]),
-        ('bone38', order_of_markers[22], order_of_markers[25]),
-        ('bone39', order_of_markers[3], order_of_markers[18]),
-        ('bone40', order_of_markers[29], order_of_markers[30]),
-        ('bone41', order_of_markers[37], order_of_markers[38]),
-        ('bone42', order_of_markers[18], order_of_markers[22]),
-        ('bone43', order_of_markers[18], order_of_markers[25]),
-        ('bone44', order_of_markers[23], order_of_markers[27]),
-        ('bone45', order_of_markers[24], order_of_markers[35]),
-        ('bone46', order_of_markers[12], order_of_markers[19]),
-        ('bone47', order_of_markers[27], order_of_markers[30]),
-        ('bone48', order_of_markers[35], order_of_markers[38]),
-        ('bone49', order_of_markers[8], order_of_markers[10])]
-        
-        
-#helper to create armature from list of tuples
-def tuple_to_armature(bones):
-    for bone_name, bone_head, bone_tail in bones:
-        add_child_bone(bone_name, bone_head, bone_tail)
-        
-#create all bones for skeleton body and hands
-tuple_to_armature(list_of_bones_order)
-
-  ```
 
 ### 6. Make virtual markers
  
@@ -463,7 +405,8 @@ def update_virtual_marker(index):
     
 ### 7. Add bones to your armature object
 
-
+Create a function that will add a bone to your new armature! We want the bone to connect two markers, since the markers are located at joints so we set one end of the bone (bone head) location to be "empty1" and the other end of the bone (bone tail) location to be "empty2"
+  
   ```python
 #adds child bone given corresponding parent and empty
 #bone tail will appear at the location of empty
@@ -500,8 +443,11 @@ def get_armature():
             break
     return armature
 armature = get_armature()
+  ```  
+  
+Now, based on how you want to arrange the bones, create a list of tuples that save the information of the bone name, and the two markers that it will connect.
 
-
+  ```python
 #Define how Skeleton bones connect to one another
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
 ('bone1', virtual_markers[1], virtual_markers[2]), #v_L_Wrist to v_L_Hand
@@ -544,6 +490,8 @@ tuple_to_armature(list_of_bones_order)
 </p>
   
 ### 8. Create a parent relationship between the head of a bone and an empty, and the tail of the same bone with a different empty
+
+The "child" object will follow the "parent object. So, we want the bone heads and tails to follow their corresponding marker! We can create functions to automate this process for each bone/marker set.
 
   ```python
 #parent heads and tails to empties
@@ -589,6 +537,15 @@ bpy.context.object.show_in_front = False
 ### 9. Create skeleton geometry (mesh)
 
 This part is all aesthetic! If you're just looking to plot the data and look at it for correctness, there's no need to create a mesh. But, if you want to render out some pretty frames and make an animated video, here's some code to help create a mesh that defines the skeleton and markers:
+
+We'll need some new imports at the top to help us with the math of creating the mesh.
+
+  ```python
+from mathutils import Vector
+from math import *
+  ```
+  
+Now for creating some mesh objects:
 
   ```python
   
@@ -856,6 +813,8 @@ mesh_obob = CreateMesh()
 
 ### 10. Create and register a handler function that will run on each frame
 
+In Blender, a handler function is a special kind of function that Blender will execute every frame. We create this function and have it move each marker to the correct position for the frame it's on, and then register our handler function. 
+
   ```python
 # Animate!
 current_skel_frame = [0]
@@ -904,6 +863,12 @@ To watch your animation in the Blender viewport, in OBJECT or POSE mode, click t
 
 ### 11. Write a function that iterates through all frames and renders a png of each one 
 
+To export your frames as a png sequence, we'll need to write a script to render them! At the top of the code, we defined our "frame_start" and "frame_end" of the sequence of frames we want to render. 
+
+We can also specify the fps if we want to watch it in the viewport (although in Blender, at least on my computer, the viewport can't play very high fps, but we can watch it faster by scrubbing through it in the Animation tab. 
+
+
+
   ```python
 #find number of frames in file
 num_frames = len(file) - header_end
@@ -937,10 +902,13 @@ for frame in range(frame_start, frame_end):
     
   ```
 
-... Now you have your animation! 🎦
+... Now you have your rendered frames and can piece them together to create an animation! 🎦
+
+
 
 Parts not covered in this tutorial: 
 - Animating a rigid body like the cyr wheel
 - Exporting XML data
+- Full mesh creation and stylization
 
 
