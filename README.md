@@ -447,6 +447,10 @@ armature = get_armature()
   
 Now, based on how you want to arrange the bones, create a list of tuples that save the information of the bone name, and the two markers that it will connect.
 
+<p align="center">
+ <img src="https://user-images.githubusercontent.com/44556715/94222121-88c1dd00-feba-11ea-8b75-9dbf3cee6399.png">
+</p>
+
   ```python
 #Define how Skeleton bones connect to one another
 list_of_bones_order = [('bone0', virtual_markers[0], virtual_markers[3]), #v_R_Wrist to v_R_Hand
@@ -547,121 +551,7 @@ from math import *
   
 Now for creating some mesh objects:
 
-  ```python
-  
-#add visible sphere meshes on each marker
-for empty in order_of_markers:
-    bpy.ops.mesh.primitive_uv_sphere_add(enter_editmode=False, location=(0, 0, 0))
-    sphere = bpy.context.selected_objects[0]
-    sphere.parent = empty
-    sphere.matrix_world.translation = empty.matrix_world.translation
-    #size of sphere
-    sphere.scale[0] = 0.015
-    sphere.scale[1] = 0.015
-    sphere.scale[2] = 0.015
-    mat = bpy.data.materials.get("Material-marker")
-    if sphere.data.materials:
-        # assign to 1st material slot
-        sphere.data.materials[0] = mat
-    else:
-        # no slots
-        sphere.data.materials.append(mat)
-        
-        
-#Create mesh outline of skeleton parts
- # verts made with XYZ coords
-verts = []
-faces = []
-iter = 0;
-for x in order_of_markers:
-    #add each marker location from order_of_markers to create a vertice there
-    verts.append(x.location)
-
-#edges mesh connect
-#connect: [(1Steve_HeadTop,2Steve_HeadR),(2Steve_HeadR,3Steve_HeadFront),(3Steve_HeadFront,0Steve_HeadL), 
-# (0Steve_HeadL,1Steve_HeadTop),(1Steve_HeadTop,3Steve_HeadFront),
-
-# (19Steve_SpineTop,18Steve_Chest),(18Steve_Chest,21Steve_BackR),(18Steve_Chest,20Steve_BackL), (20Steve_BackL,21Steve_BackR),
-# (21Steve_BackR,19Steve_SpineTop),(20Steve_BackL,19Steve_SpineTop), 
-
-# (11Steve_RShoulderTop,12Steve_RShoulderBack),(11Steve_RShoulderTop,14Steve_RElbowOut),(12Steve_RShoulderBack,13Steve_RArm), 
-# (14Steve_RElbowOut,13Steve_RArm),(14Steve_RElbowOut,15Steve_RWristOut),(15Steve_RWristOut,16Steve_RWristIn), 
-# (15Steve_RWristOut,17Steve_RHandOut)
-
-
-#(4Steve_LShoulderTop,5Steve_LShoulderBack), (4Steve_LShoulderTop,7Steve_LElbowOut), (5Steve_LShoulderBack,6Steve_LArm),
-#(7Steve_LElbowOut,6Steve_LArm),(7Steve_LElbowOut,8Steve_LWristOut), (8Steve_LWristOut,9Steve_LWristIn),
-#(8Steve_LWristOut,10Steve_LHandOut),
-
-#(22Steve_WaistLFront,25Steve_WaistRFront),(22Steve_WaistLFront,23Steve_WaistLBack),
-# (25Steve_WaistRFront,24Steve_WaistRBack), (23Steve_WaistLBack,24Steve_WaistRBack),
-
-#(25Steve_WaistRFront,34Steve_RThigh),(24Steve_WaistRBack,35Steve_RKneeOut),(34Steve_RThigh,35Steve_RKneeOut),
-# (35Steve_RKneeOut,36Steve_RShin),(35Steve_RKneeOut,37Steve_RAnkleOut),(37Steve_RAnkleOut,38Steve_RHeelBack),
-# (38Steve_RHeelBack,39Steve_RForefootOut),(38Steve_RHeelBack,41Steve_RForefootIn),(41Steve_RForefootIn,40Steve_RToeTip), 
-# (36Steve_RShin,37Steve_RAnkleOut), (39Steve_RForefootOut,40Steve_RToeTip), 
-
-# (22Steve_WaistLFront,26Steve_LThigh),(23Steve_WaistLBack,27Steve_LKneeOut),(26Steve_LThigh,27Steve_LKneeOut),
-# (27Steve_LKneeOut,28Steve_LShin),(27Steve_LKneeOut,29Steve_LAnkleOut),(29Steve_LAnkleOut,30Steve_LHeelBack),
-#  (30Steve_LHeelBack,31Steve_LForefootOut), (30Steve_LHeelBack,33Steve_LForefootIn),(33Steve_LForefootIn,32Steve_LToeTip),
-# (28Steve_LShin,29Steve_LAnkleOut), (31Steve_LForefootOut,32Steve_LToeTip)]
-
-
-edges =  [(1,2),(2,3),(3,0),(0,1),(1,3), #head
-#chest and back
-(19,18),(18,21),(18,20),(20,21),(21,19),(20,19),
-#Right shoulder and arm
-(11,12),(11,14),(12,13),(14,13),(14,15),(15,16), (15,17),
-#Left shoulder and arm
-(4,5),(4,7),(5,6),(7,6),(7,8),(8,9), (8,10),
-#Waist
-(22,25),(22,23),(25,24),(23,24),
-#Right Leg and foot
-(25,34),(24,35),(34,35),(35,36),(35,37),(37,38), (38,39),
-(38,41),(41,40),(36,37), (39,40),
-#left leg and foot
-(22,26),(23,27),(26,27),(27,28),(27,29),(29,30), (30,31),
-(30,33),(33,32),(28,29), (31,32)]
-
-#Create the mesh with the vertices and faces
-obj.data.from_pydata(verts, edges, faces)
-bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-bpy.context.view_layer.objects.active = obj
-obj.select_set(state=True)
-#Set origin of the plane to its median center
-bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
-
-#Add screw modifier to make it thicker and visible in render
-bpy.ops.object.modifier_add(type='SCREW')
-bpy.context.object.modifiers["Screw"].angle = 0
-bpy.context.object.modifiers["Screw"].steps = 2
-bpy.context.object.modifiers["Screw"].render_steps = 2
-bpy.context.object.modifiers["Screw"].screw_offset = 0.01
-bpy.context.object.modifiers["Screw"].use_merge_vertices = True
-
-#Add vertex groups to have each part of mesh controlled by hooks and corresponding empty object
-def add_vertex_group_hooks():
-    for x in range(len(verts)):
-        #Create vertex groups, one for each vertex
-        vg = obj.vertex_groups.new(name="group" + str(x))
-        vg.add([x], 1, "ADD")
-        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-        #Add a hook modifier so that a vertice controlled by a specific empty 
-        bpy.ops.object.modifier_add(type='HOOK')
-        hook_name = "Hook" + str(x)
-        bpy.context.object.modifiers["Hook"].name = hook_name
-        bpy.context.object.modifiers[hook_name].object = order_of_markers[x]
-        bpy.context.object.modifiers[hook_name].vertex_group = "group" + str(x)
-
-add_vertex_group_hooks()
-#keep track of mesh object
-outline_mesh_obob = obj
-  ```
-<p align="center">
- <img src="https://user-images.githubusercontent.com/44556715/94216257-ee0ed180-feac-11ea-9ce0-002a05fd90e9.png">
-</p>
+The CreateMesh script was adapted from this stack exchange post: https://blender.stackexchange.com/questions/75040/convert-bones-to-meshes/75049
 
   ```python
 #add visible sphere meshes on each marker
@@ -685,7 +575,8 @@ for empty in order_of_markers:
         
 
    
-#script to create a mesh of the armature 
+#The CreateMesh script was adapted from this stack exchange post: 
+https://blender.stackexchange.com/questions/75040/convert-bones-to-meshes/75049
 def CreateMesh():
     obj = get_armature()
 
@@ -867,7 +758,7 @@ To export your frames as a png sequence, we'll need to write a script to render 
 
 We can also specify the fps if we want to watch it in the viewport (although in Blender, at least on my computer, the viewport can't play very high fps, but we can watch it faster by scrubbing through it in the Animation tab. 
 
-
+Also note that if you use a different Blender project than the demo file given, you'll need a camera pointed at the skeleton in your project before you can render out frames.  
 
   ```python
 #find number of frames in file
@@ -877,6 +768,15 @@ bpy.context.scene.frame_start = frame_start
 bpy.context.scene.frame_end = num_frames
 #Set FPS: fps of qualisys motion caption data is 300.
 bpy.context.scene.render.fps = 300
+
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
+bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+#Set armature active
+bpy.context.view_layer.objects.active = armature_data
+#Set armature selected
+armature_data.select_set(state=True)
 
 #script to export animation as pngs 
 print("Saving frames...")
