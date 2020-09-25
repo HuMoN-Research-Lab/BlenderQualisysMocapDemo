@@ -13,7 +13,7 @@ Here's a general overview of the steps that are taken to produce the animation:
 7. Add bones to your armature object
 8. Create a parent relationship between the head of a bone and an empty, and the tail of the same bone with a different empty
 9. Create skeleton geometry (mesh)
-10. Create a handler function that will run on each frame
+10. Create and register a handler function that will run on each frame
 11. Write a function that iterates through all frames and renders a png of each one 
 
 
@@ -684,11 +684,196 @@ outline_mesh_obob = obj
  <img src="https://user-images.githubusercontent.com/44556715/94216257-ee0ed180-feac-11ea-9ce0-002a05fd90e9.png">
 </p>
 
+  ```python
+#script to create a mesh of the armature 
+def CreateMesh():
+    obj = get_armature()
 
-### 10. Create a handler function that will run on each frame
+    if obj == None:
+        print( "No selection" )
+    elif obj.type != 'ARMATURE':
+        print( "Armature expected" )
+    else:
+        return processArmature( bpy.context, obj )
 
+#Use armature to create base object
+def armToMesh( arm ):
+    name = arm.name + "_mesh"
+    dataMesh = bpy.data.meshes.new( name + "Data" )
+    mesh = bpy.data.objects.new( name, dataMesh )
+    mesh.matrix_world = arm.matrix_world.copy()
+    return mesh
 
+#Make vertices and faces 
+def boneGeometry( l1, l2, x, z, baseSize, l1Size, l2Size, base ):
+    #make bones thinner
+    x1 = x * .1 * .1
+    z1 = z * .1 * .1
+    
+    x2 = Vector( (0, 0, 0) )
+    z2 = Vector( (0, 0, 0) )
+
+    verts = [
+        l1 - x1 + z1,
+        l1 + x1 + z1,
+        l1 - x1 - z1,
+        l1 + x1 - z1,
+        l2 - x2 + z2,
+        l2 + x2 + z2,
+        l2 - x2 - z2,
+        l2 + x2 - z2
+        ] 
+
+    faces = [
+        (base+3, base+1, base+0, base+2),
+        (base+6, base+4, base+5, base+7),
+        (base+4, base+0, base+1, base+5),
+        (base+7, base+3, base+2, base+6),
+        (base+5, base+1, base+3, base+7),
+        (base+6, base+2, base+0, base+4)
+        ]
+
+    return verts, faces
+
+#Process the armature, goes through its bones and creates the mesh
+def processArmature(context, arm, genVertexGroups = True):
+    print("processing {0}".format(arm.name))
+
+    #Creates the mesh object
+    meshObj = armToMesh( arm )
+    context.collection.objects.link( meshObj )
+
+    verts = []
+    edges = []
+    faces = []
+    vertexGroups = {}
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    try:
+        #Goes through each bone
+        for editBone in arm.data.edit_bones:
+            boneName = editBone.name
+            print( boneName )
+            poseBone = arm.pose.bones[boneName]
+
+            #Gets edit bone informations
+            editBoneHead = editBone.head
+            editBoneTail = editBone.tail
+            editBoneVector = editBoneTail - editBoneHead
+            editBoneSize = editBoneVector.dot( editBoneVector )
+            editBoneRoll = editBone.roll
+            editBoneX = editBone.x_axis
+            editBoneZ = editBone.z_axis
+            editBoneHeadRadius = editBone.head_radius
+            editBoneTailRadius = editBone.tail_radius
+
+            #Creates the mesh data for the bone
+            baseIndex = len(verts)
+            baseSize = sqrt( editBoneSize )
+            newVerts, newFaces = boneGeometry( editBoneHead, editBoneTail, editBoneX, editBoneZ, baseSize, editBoneHeadRadius, editBoneTailRadius, baseIndex )
+
+            verts.extend( newVerts )
+            faces.extend( newFaces )
+
+            #Creates the weights for the vertex groups
+            vertexGroups[boneName] = [(x, 1.0) for x in range(baseIndex, len(verts))]
+
+        #Assigns the geometry to the mesh
+        meshObj.data.from_pydata(verts, edges, faces)
+
+    except:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    else:
+        bpy.ops.object.mode_set(mode='OBJECT')
+    #Assigns the vertex groups
+    if genVertexGroups:
+        for name1, vertexGroup in vertexGroups.items():
+            groupObject = meshObj.vertex_groups.new(name = name1)
+            for (index, weight) in vertexGroup:
+                groupObject.add([index], weight, 'REPLACE')
+
+    #Creates the armature modifier
+    modifier = meshObj.modifiers.new('ArmatureMod', 'ARMATURE')
+    modifier.object = arm
+    modifier.use_bone_envelopes = False
+    modifier.use_vertex_groups = True
+
+    meshObj.data.update()
+
+    return meshObj
+
+mesh_obob = CreateMesh()
+
+  ```
+
+### 10. Create and register a handler function that will run on each frame
+
+  ```python
+#handler function runs on every frame of the animation                
+def my_handler(scene): 
+    bpy.ops.object.mode_set(mode='POSE')
+    #keep track of current_marker
+    current_marker = 0 
+    #find the current frame number
+    frame = scene.frame_current
+    current_frame_skeleton_data = current_skel_frame[0]
+    current_skel_frame[0] = frame - 1
+    #get the list of marker points from the current frame
+    markers_list = create_data_arr(current_skel_frame[0])
+    #current virtual marker 
+    current_virtual_marker = 0
+    #iterate through list of markers in this frame
+    for col in markers_list:
+        if (col[0] and col[1] and col[2]):
+            coord = Vector((float(col[0]) * 0.001, float(col[1]) * 0.001, float(col[2]) * 0.001))
+            empty = order_of_markers[current_marker] 
+            #change empty position : this is where the change in location every frame happens
+            empty.location = coord
+        #increment counter of the number marker we are currently changing
+        current_marker += 1 
+    for index in range(len(virtual_markers)):
+        update_virtual_marker(index)
+        
+        
+        
+#--------------------------------------------------------------------
+#append handler function
+                
+bpy.app.handlers.frame_change_post.clear()
+#function to register custom handler
+def register():
+   bpy.app.handlers.frame_change_post.append(my_handler)
+   
+def unregister():
+    bpy.app.handlers.frame_change_post.remove(my_handler)
+        
+register()
+  ```
   
+ 
+
+### 11. Write a function that iterates through all frames and renders a png of each one 
+
+  ```python
+#script to export animation as pngs and add info to XML file
+print("Saving frames...")
+scene = bpy.context.scene
+#set the number of frames to output 
+if frame_end is "all":
+    frame_end = scene.frame_end + 1
+else: 
+    frame_end += 1
+#iterate through all frames
+for frame in range(frame_start, frame_end):
+    print(frame)
+    #specify file path to the folder you want to export to
+    scene.render.filepath = output_frames_folder + "output_frames/" + str(frame)
+    scene.frame_set(frame)
+    #render frame
+    bpy.ops.render.render(write_still=True)
+    
+  ```
+
 ... Now you have your animation! 🎦
 
 Parts not covered in this tutorial: 
