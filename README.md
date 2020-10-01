@@ -124,6 +124,13 @@ At the top of the code, import bpy which we will need to create a Blender object
    #At the top of the code
    import bpy
    ```
+   
+And other imports we will need later on: 
+   ```python
+ from mathutils import Vector
+ from math import *
+   ```
+   
 Then we can iterate through our list of markers and create an empty object at each marker position on the first frame.
 
    ```python
@@ -550,13 +557,6 @@ bpy.context.object.show_in_front = False
 ### 9. Create skeleton geometry (mesh)
 
 This part is all aesthetic! If you're just looking to plot the data and look at it for correctness, there's no need to create a mesh. But, if you want to render out some pretty frames and make an animated video, here's some code to help create a mesh that defines the skeleton and markers:
-
-We'll need some new imports at the top to help us with the math of creating the mesh.
-
-  ```python
-from mathutils import Vector
-from math import *
-  ```
   
 Now for creating some mesh objects:
 
